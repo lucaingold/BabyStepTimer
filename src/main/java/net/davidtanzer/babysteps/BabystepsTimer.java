@@ -77,10 +77,10 @@ public class BabystepsTimer {
 			public void hyperlinkUpdate(final HyperlinkEvent e) {
 				if(e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 					if("command://start".equals(e.getDescription())) {
-						timerFrame.setAlwaysOnTop(true);
-						timerPane.setText(createTimerHtml(getRemainingTimeCaption(0L), BACKGROUND_COLOR_NEUTRAL, true));
-						timerFrame.repaint();
-						new TimerThread().start();
+//						timerFrame.setAlwaysOnTop(true);
+//						timerPane.setText(createTimerHtml(getRemainingTimeCaption(0L), BACKGROUND_COLOR_NEUTRAL, true));
+//						timerFrame.repaint();
+//						new TimerThread().start();
 					} else if("command://stop".equals(e.getDescription())) {
 						timerRunning = false;
 						timerFrame.setAlwaysOnTop(false);
@@ -100,28 +100,12 @@ public class BabystepsTimer {
 		timerFrame.setVisible(true);
 	}
 
-	private static String getRemainingTimeCaption(final long elapsedTime) {
+	private String getRemainingTimeCaption(final long elapsedTime) {
 		long elapsedSeconds = elapsedTime/1000;
 		long remainingSeconds = SECONDS_IN_CYCLE - elapsedSeconds;
 		
 		long remainingMinutes = remainingSeconds/60;
 		return twoDigitsFormat.format(remainingMinutes)+":"+twoDigitsFormat.format(remainingSeconds-remainingMinutes*60);
-	}
-
-	private static String createTimerHtml(final String timerText, final String bodyColor, final boolean running) {
-		String timerHtml = "<html><body style=\"border: 3px solid #555555; background: "+bodyColor+"; margin: 0; padding: 0;\">" +
-				"<h1 style=\"text-align: center; font-size: 30px; color: #333333;\">"+timerText+"</h1>" +
-				"<div style=\"text-align: center\">";
-		if(running) {
-			timerHtml += "<a style=\"color: #555555;\" href=\"command://stop\">Stop</a> " +
-					"<a style=\"color: #555555;\" href=\"command://reset\">Reset</a> ";
-		} else {
-			timerHtml += "<a style=\"color: #555555;\" href=\"command://start\">Start</a> ";
-		}
-		timerHtml += "<a style=\"color: #555555;\" href=\"command://quit\">Quit</a> ";
-		timerHtml += "</div>" +
-				"</body></html>";
-		return timerHtml;
 	}
 
 	public static synchronized void playSound(final String url) {
@@ -142,41 +126,41 @@ public class BabystepsTimer {
 	}
 
 	private static final class TimerThread extends Thread {
-		@Override
-		public void run() {
-			timerRunning = true;
-			currentCycleStartTime = System.currentTimeMillis();
-			
-			while(timerRunning) {
-				long elapsedTime = System.currentTimeMillis() - currentCycleStartTime;
-				
-				if(elapsedTime >= SECONDS_IN_CYCLE*1000+980) {
-					currentCycleStartTime = System.currentTimeMillis();
-					elapsedTime = System.currentTimeMillis() - currentCycleStartTime;
+	@Override
+	public void run() {
+		timerRunning = true;
+		currentCycleStartTime = System.currentTimeMillis();
+
+		while(timerRunning) {
+			long elapsedTime = System.currentTimeMillis() - currentCycleStartTime;
+
+			if(elapsedTime >= SECONDS_IN_CYCLE*1000+980) {
+				currentCycleStartTime = System.currentTimeMillis();
+				elapsedTime = System.currentTimeMillis() - currentCycleStartTime;
+			}
+			if(elapsedTime >= 5000 && elapsedTime < 6000 && !BACKGROUND_COLOR_NEUTRAL.equals(bodyBackgroundColor)) {
+				bodyBackgroundColor = BACKGROUND_COLOR_NEUTRAL;
+			}
+
+			String remainingTime = getRemainingTimeCaption(elapsedTime);
+			if(!remainingTime.equals(lastRemainingTime)) {
+				if(remainingTime.equals("00:10")) {
+					playSound("2166__suburban-grilla__bowl-struck.wav");
+				} else if(remainingTime.equals("00:00")) {
+					playSound("32304__acclivity__shipsbell.wav");
+					bodyBackgroundColor=BACKGROUND_COLOR_FAILED;
 				}
-				if(elapsedTime >= 5000 && elapsedTime < 6000 && !BACKGROUND_COLOR_NEUTRAL.equals(bodyBackgroundColor)) {
-					bodyBackgroundColor = BACKGROUND_COLOR_NEUTRAL;
-				}
-				
-				String remainingTime = getRemainingTimeCaption(elapsedTime);
-				if(!remainingTime.equals(lastRemainingTime)) {
-					if(remainingTime.equals("00:10")) {
-						playSound("2166__suburban-grilla__bowl-struck.wav");
-					} else if(remainingTime.equals("00:00")) {
-						playSound("32304__acclivity__shipsbell.wav");
-						bodyBackgroundColor=BACKGROUND_COLOR_FAILED;
-					}
-					
-					timerPane.setText(createTimerHtml(remainingTime, bodyBackgroundColor, true));
-					timerFrame.repaint();
-					lastRemainingTime = remainingTime;
-				}
-				try {
-					sleep(10);
-				} catch (InterruptedException e) {
-					//We don't really care about this one...
-				}
+
+				timerPane.setText(createTimerHtml(remainingTime, bodyBackgroundColor, true));
+				timerFrame.repaint();
+				lastRemainingTime = remainingTime;
+			}
+			try {
+				sleep(10);
+			} catch (InterruptedException e) {
+				//We don't really care about this one...
 			}
 		}
 	}
+}
 }
